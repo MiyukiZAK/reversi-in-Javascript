@@ -1,2 +1,2 @@
-# othello
-othello in JavaScript
+# reversi
+reversi in JavaScript

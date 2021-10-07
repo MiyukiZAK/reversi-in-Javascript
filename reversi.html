@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REVERSI</title>
+</head>
+
+<body>
+
+  <canvas id="reversi" width="320" height="320" style="background-color: green"></canvas>
+  <script>
+    const canvas = document.getElementById("reversi");
+    const ctx = canvas.getContext("2d");
+    const playBoard = [
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 1, 2, 0, 0, 0],
+      [0, 0, 0, 2, 1, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0],
+    ]
+    const WHITE = 1;
+    const BLACK = 2;
+
+    for (let col = 0; col < 8; col++) {
+      ctx.beginPath();
+      ctx.moveTo(40 * col, 0);
+      ctx.lineTo(40 * col, 320);
+      ctx.stroke();
+    }
+
+    for (let row = 0; row < 8; row++) {
+      ctx.beginPath();
+      ctx.moveTo(0, 40 * row);
+      ctx.lineTo(320, 40 * row);
+      ctx.stroke();
+    }
+
+    let currentPlayer = WHITE;
+    function changePlayer() {
+      currentPlayer = currentPlayer === WHITE ? BLACK : WHITE;
+      // console.log("currentPlayer; ", currentPlayer);
+    }
+
+    // 8方向の配列
+    const directions = [
+      { name: "right", x: 1, y: 0 },
+      { name: "left", x: -1, y: 0 },
+      { name: "up", x: 0, y: -1 },
+      { name: "low", x: 0, y: 1 },
+      { name: "upperRight", x: 1, y: -1 },
+      { name: "upperLeft", x: -1, y: -1 },
+      { name: "lowerRight", x: 1, y: 1 },
+      { name: "lowerLeft", x: -1, y: 1 },
+    ];
+
+    class Stone {
+      constructor(x, y, color) {
+        this.x = x
+        this.y = y
+        this.color = color
+      }
+    }
+
+    function canPutStone(x, y, stoneColor) { //石が置けるか
+      let stoneToReverse = []; //全ての方向を検査した結果を格納
+      if (playBoard[y][x] !== 0) {
+        // 空じゃないマスには置けない
+        alert("そこに石は置けません");
+        return false;
+      }
+
+      directions.forEach(direction => {
+        const result = collectStones(x, y, stoneColor, direction)
+        stoneToReverse = [...stoneToReverse, ...result]; //全8方向の結果を入れる
+      });
+      // console.log({stoneToReverse});
+      if (stoneToReverse.length >= 1) {
+        putStone(x, y, currentPlayer);
+        playBoard[y][x] = currentPlayer;
+        stoneToReverse.forEach(stone => {
+          playBoard[stone.y][stone.x] = currentPlayer;
+          putStone(stone.x, stone.y, currentPlayer);
+        })
+        changePlayer();
+      } else {
+        alert("おけません");
+      }
+
+    }
+
+    function collectStones(x, y, color, direction) {
+      const stoneColorToReverse = color === WHITE ? BLACK : WHITE;
+      const stones = []; //ひっくり返す対象の石をあつめる
+
+      // 8x8マスなので、最大7回右に移動する
+      for (let i = 0; i < 7; i++) {
+        x += direction.x;
+        y += direction.y;
+
+        // 盤面の外なのでループ処理を抜ける
+        if (x < 0 || x > 7 || y < 0 || y > 7) break;
+
+        // 石が置かれてない場合
+        if (playBoard[y][x] === 0) break;
+
+        // 石の情報を配列に追加
+        stones.push(new Stone(x, y, playBoard[y][x]));
+
+        //先頭以外で自分の色が出たらその時点でループ処理を抜ける
+        if (playBoard[y][x] === color) break;
+      }
+
+      // 1つ以下しか配列がない場合ひっくり返せない
+      if (stones.length <= 1) return [];
+
+      if (stones[0].color === color) {
+        // 右隣は同じ色の石の場合
+        console.log("その方向の隣が同じ色なので、そこに石は置けない");
+        return;
+      }
+
+      // 配列の先頭が相手の石の色でない場合ひっくり返せない
+      if (stones[0].color !== stoneColorToReverse) return [];
+
+      // 末尾の石の色が自分と同じ色でない場合ひっくり返せない
+      if (stones[stones.length - 1].color !== color) return [];
+
+      // 実際にひっくり返せる、stones内の手番ではない色の石を集める
+      // stones.forEach(stone => {
+      //   if (!stone.color === currentPlayer) {
+      //     stoneToReverse.push[stone];
+      //   }
+      // });
+
+      return stones;
+
+    }
+
+    // 石を描画するコード
+    function putStone(x, y, color) {
+      
+      ctx.fillStyle = color === 1 ? "white" : "black";
+
+      ctx.beginPath();
+      const blockSize = 40;
+      const blockSizeHalf = 20
+      const posX = (x * blockSize) + blockSizeHalf;
+      const posY = (y * blockSize) + blockSizeHalf;
+      ctx.arc(posX, posY, 16, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+
+    // 最初の石4つをセット
+    putStone(3, 3, WHITE);
+    putStone(4, 3, BLACK);
+    putStone(3, 4, BLACK);
+    putStone(4, 4, WHITE);
+
+    // クリックした位置に石を描画
+    canvas.onclick = function (event) {
+      const rect = event.target.getBoundingClientRect();
+      let mouseX = event.clientX - rect.left;
+      let mouseY = event.clientY - rect.top;
+      var memoX = Math.floor(mouseX / 40);
+      var memoY = Math.floor(mouseY / 40);
+      // ひっくり返せる石の配列を返す、1つでも要素があればそこに石を置ける
+      canPutStone(Math.floor(mouseX / 40), Math.floor(mouseY / 40), currentPlayer);
+    }
+  </script>
+</body>
+
+</html>
